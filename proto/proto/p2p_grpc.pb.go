@@ -112,6 +112,7 @@ var PeerService_ServiceDesc = grpc.ServiceDesc{
 type NodeServiceClient interface {
 	// Broadcast a message to all peers.
 	Broadcast(ctx context.Context, in *BroadcastRequest, opts ...grpc.CallOption) (*BroadcastResponse, error)
+	ReceiveMessage(ctx context.Context, in *ReceiveMessageRequest, opts ...grpc.CallOption) (*ReceiveMessageResponse, error)
 }
 
 type nodeServiceClient struct {
@@ -131,12 +132,22 @@ func (c *nodeServiceClient) Broadcast(ctx context.Context, in *BroadcastRequest,
 	return out, nil
 }
 
+func (c *nodeServiceClient) ReceiveMessage(ctx context.Context, in *ReceiveMessageRequest, opts ...grpc.CallOption) (*ReceiveMessageResponse, error) {
+	out := new(ReceiveMessageResponse)
+	err := c.cc.Invoke(ctx, "/p2p.NodeService/ReceiveMessage", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // NodeServiceServer is the server API for NodeService service.
 // All implementations must embed UnimplementedNodeServiceServer
 // for forward compatibility
 type NodeServiceServer interface {
 	// Broadcast a message to all peers.
 	Broadcast(context.Context, *BroadcastRequest) (*BroadcastResponse, error)
+	ReceiveMessage(context.Context, *ReceiveMessageRequest) (*ReceiveMessageResponse, error)
 	mustEmbedUnimplementedNodeServiceServer()
 }
 
@@ -146,6 +157,9 @@ type UnimplementedNodeServiceServer struct {
 
 func (UnimplementedNodeServiceServer) Broadcast(context.Context, *BroadcastRequest) (*BroadcastResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Broadcast not implemented")
+}
+func (UnimplementedNodeServiceServer) ReceiveMessage(context.Context, *ReceiveMessageRequest) (*ReceiveMessageResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReceiveMessage not implemented")
 }
 func (UnimplementedNodeServiceServer) mustEmbedUnimplementedNodeServiceServer() {}
 
@@ -178,6 +192,24 @@ func _NodeService_Broadcast_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _NodeService_ReceiveMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReceiveMessageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodeServiceServer).ReceiveMessage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/p2p.NodeService/ReceiveMessage",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodeServiceServer).ReceiveMessage(ctx, req.(*ReceiveMessageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // NodeService_ServiceDesc is the grpc.ServiceDesc for NodeService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -188,6 +220,10 @@ var NodeService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Broadcast",
 			Handler:    _NodeService_Broadcast_Handler,
+		},
+		{
+			MethodName: "ReceiveMessage",
+			Handler:    _NodeService_ReceiveMessage_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

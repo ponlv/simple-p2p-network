@@ -20,3 +20,11 @@ message BroadcastRequest {
 message BroadcastResponse {
 
 }
+
+message ReceiveMessageRequest {
+
+}
+
+message ReceiveMessageResponse {
+
+}

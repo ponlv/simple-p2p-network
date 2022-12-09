@@ -15,4 +15,5 @@ service NodeService {
 
   // Broadcast a message to all peers.
   rpc Broadcast (BroadcastRequest) returns (BroadcastResponse) {}
+  rpc ReceiveMessage (ReceiveMessageRequest) returns (ReceiveMessageResponse) {}
 }
