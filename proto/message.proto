@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package p2p;
+
+option go_package = "./proto";
+
+message GetNeighbourResponse {
+  repeated string Peers = 1;  // Peers is a list of peer's network address.
+}
+
+// Empty is an empty message.
+message GetNeighbourRequest {
+  string Address = 1;  // Address is the address of the peer.
+}
+
+message BroadcastRequest {
+
+}
+
+message BroadcastResponse {
+
+}
