@@ -5,8 +5,24 @@ import (
 	"sync"
 )
 
+type PeerManager interface {
+	// AddPeers add list of addresses to the peer manager.
+	AddPeers(addrs []string)
+
+	// RemovePeer removes a peer from the peer manager.
+	RemovePeer(addr string) error
+
+	// RemoveAllPeers removes all peers from the peer manager.
+	RemoveAllPeers() error
+
+	// Disconnect closes the connection to the peer.
+	Disconnect(addr string) error
+}
+
+var _ PeerManager = (*peerManager)(nil)
+
 // PeerManager manages the peers that a local node known.
-type PeerManager struct {
+type peerManager struct {
 	addr string // network address of local node
 
 	Peers map[string]*peer // known remote peers
@@ -18,9 +34,9 @@ type PeerManager struct {
 }
 
 // NewPeerManager returns a new peer manager with its own network address.
-func NewPeerManager(self string) *PeerManager {
-	return &PeerManager{
-		addr:            self,
+func NewPeerManager(add string) PeerManager {
+	return &peerManager{
+		addr:            add,
 		Peers:           make(map[string]*peer),
 		Mux:             sync.RWMutex{},
 		stopDiscover:    make(chan struct{}),
@@ -30,7 +46,7 @@ func NewPeerManager(self string) *PeerManager {
 }
 
 // addPeer adds an address to the peer manager.
-func (pm *PeerManager) addPeer(addr string) {
+func (pm *peerManager) addPeer(addr string) {
 	pm.Mux.Lock()
 	defer pm.Mux.Unlock()
 
@@ -42,15 +58,14 @@ func (pm *PeerManager) addPeer(addr string) {
 }
 
 // AddPeers add list of addresses to the peer manager.
-func (pm *PeerManager) AddPeers(addrs []string) {
+func (pm *peerManager) AddPeers(addrs []string) {
 	for _, addr := range addrs {
 		pm.addPeer(addr)
 	}
 }
 
-// RemovePeer removes a peer from the peer manager.
-// It disconnects the connection relative to the peer before removing.
-func (pm *PeerManager) RemovePeer(addr string) error {
+// RemovePeer removes a peer from the peer manager. It disconnects the connection relative to the peer before removing.
+func (pm *peerManager) RemovePeer(addr string) error {
 	pm.Mux.Lock()
 	defer pm.Mux.Unlock()
 
@@ -65,22 +80,26 @@ func (pm *PeerManager) RemovePeer(addr string) error {
 }
 
 // RemoveAllPeers removes all peers from the peer manager.
-func (pm *PeerManager) RemoveAllPeers() error {
-	pm.Mux.Lock()
-	defer pm.Mux.Unlock()
+func (pm *peerManager) RemoveAllPeers() error {
 
 	for addr := range pm.Peers {
-		if err := pm.disconnect(addr); err != nil {
+		if err := pm.RemovePeer(addr); err != nil {
 			return err
 		}
-
-		delete(pm.Peers, addr)
 	}
 	return nil
 }
 
+// Disconnect closes the connection to the peer.
+func (pm *peerManager) Disconnect(addr string) error {
+	pm.Mux.Lock()
+	defer pm.Mux.Unlock()
+
+	return pm.disconnect(addr)
+}
+
 // disconnect closes the connection to the peer
-func (pm *PeerManager) disconnect(addr string) error {
+func (pm *peerManager) disconnect(addr string) error {
 	p, ok := pm.Peers[addr]
 	if !ok {
 		return fmt.Errorf("%v failed to disconnect: unknown peer: %v", pm.addr, addr)
@@ -92,12 +111,4 @@ func (pm *PeerManager) disconnect(addr string) error {
 		}
 	}
 	return nil
-}
-
-// Disconnect closes the connection to the peer.
-func (pm *PeerManager) Disconnect(addr string) error {
-	pm.Mux.Lock()
-	defer pm.Mux.Unlock()
-
-	return pm.disconnect(addr)
 }

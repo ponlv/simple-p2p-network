@@ -15,7 +15,7 @@ type Node struct {
 
 	Waiter *sync.WaitGroup // WaitGroup for graceful shutdown
 
-	PeerManager *p2p.PeerManager // Peer manager instance
+	PeerManager p2p.PeerManager // Peer manager instance
 }
 
 // NewNode creates a new node instance.
