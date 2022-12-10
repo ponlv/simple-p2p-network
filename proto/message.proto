@@ -4,27 +4,29 @@ package p2p;
 
 option go_package = "./proto";
 
-message GetNeighbourResponse {
-  repeated string Peers = 1;  // Peers is a list of peer's network address.
+enum MessageType {
+      FIND_NODE = 0;
+      NODES = 1;
+      FIND_VALUE = 2;
+      VALUE = 3;
+}
+
+message Pong {
+  repeated string Addresses = 1;  // Peers is a list of peer's network address.
 }
 
 // Empty is an empty message.
-message GetNeighbourRequest {
+message Ping {
   string Address = 1;  // Address is the address of the peer.
 }
 
-message BroadcastRequest {
 
+message MessageRequest {
+  MessageType Type = 1;
+  bytes Value = 2;
 }
 
-message BroadcastResponse {
-
-}
-
-message ReceiveMessageRequest {
-
-}
-
-message ReceiveMessageResponse {
-
+message MessageResponse {
+  MessageType Type = 1;
+  bytes Value = 2;
 }

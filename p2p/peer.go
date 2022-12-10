@@ -36,11 +36,11 @@ type Peer interface {
 	// GetPeersNum returns the number of peers in the peer manager.
 	GetPeersNum() int
 
-	// GetNeighbours returns the neighbours of a peer.
-	GetNeighbours(ctx context.Context, req *proto.GetNeighbourRequest) (*proto.GetNeighbourResponse, error)
-
 	// StartDiscoverPeers starts the peer discovery process.
 	StartDiscoverPeers(bootstraps ...string)
+
+	// PingPong sends a ping message to a peer and waits for a pong message.
+	PingPong(context.Context, *proto.Ping) (*proto.Pong, error)
 }
 
 // peer is the remote node that a local node can connect to.
@@ -215,13 +215,13 @@ func (pm *peerManager) discoverPeers(addr string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	peers, err := client.GetNeighbours(ctx, &proto.GetNeighbourRequest{Address: pm.addr})
+	peers, err := client.PingPong(ctx, &proto.Ping{Address: pm.addr})
 	if err != nil {
 		log.Printf("%v failed to get neighbors of peer: %v: %v", pm.addr, addr, err)
 		return
 	}
 
-	pm.AddPeers(peers.Peers...)
+	pm.AddPeers(peers.Addresses...)
 }
 
 // GetPeersNum returns the number of peers in the peer manager.
@@ -260,10 +260,8 @@ func (pm *peerManager) StartDiscoverPeers(bootstraps ...string) {
 	}()
 }
 
-// GetNeighbors returns the already known neighbor peers, and add the requester into the known,
-// peers list if it's not known before.
-func (pm *peerManager) GetNeighbours(ctx context.Context, req *proto.GetNeighbourRequest) (*proto.GetNeighbourResponse, error) {
-	addresses := pm.GetPeers()
-	pm.AddPeers(req.Address)
-	return &proto.GetNeighbourResponse{Peers: addresses}, nil
+func (pm *peerManager) PingPong(ctx context.Context, ping *proto.Ping) (*proto.Pong, error) {
+
+	peers := pm.GetPeers()
+	return &proto.Pong{Addresses: peers}, nil
 }

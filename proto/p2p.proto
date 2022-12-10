@@ -8,12 +8,10 @@ option go_package = "./proto";
 
 service PeerService {
   // GetPeers returns a list of peer's network address.
-  rpc GetNeighbours (GetNeighbourRequest) returns (GetNeighbourResponse) {}
+  rpc PingPong (Ping) returns (Pong) {}
+
 }
 
-service NodeService {
-
-  // Broadcast a message to all peers.
-  rpc Broadcast (BroadcastRequest) returns (BroadcastResponse) {}
-  rpc ReceiveMessage (ReceiveMessageRequest) returns (ReceiveMessageResponse) {}
+service MessageService {
+  rpc SendMessage (MessageRequest) returns (MessageResponse) {}
 }

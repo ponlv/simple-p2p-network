@@ -23,7 +23,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type PeerServiceClient interface {
 	// GetPeers returns a list of peer's network address.
-	GetNeighbours(ctx context.Context, in *GetNeighbourRequest, opts ...grpc.CallOption) (*GetNeighbourResponse, error)
+	PingPong(ctx context.Context, in *Ping, opts ...grpc.CallOption) (*Pong, error)
 }
 
 type peerServiceClient struct {
@@ -34,9 +34,9 @@ func NewPeerServiceClient(cc grpc.ClientConnInterface) PeerServiceClient {
 	return &peerServiceClient{cc}
 }
 
-func (c *peerServiceClient) GetNeighbours(ctx context.Context, in *GetNeighbourRequest, opts ...grpc.CallOption) (*GetNeighbourResponse, error) {
-	out := new(GetNeighbourResponse)
-	err := c.cc.Invoke(ctx, "/p2p.PeerService/GetNeighbours", in, out, opts...)
+func (c *peerServiceClient) PingPong(ctx context.Context, in *Ping, opts ...grpc.CallOption) (*Pong, error) {
+	out := new(Pong)
+	err := c.cc.Invoke(ctx, "/p2p.PeerService/PingPong", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -44,22 +44,20 @@ func (c *peerServiceClient) GetNeighbours(ctx context.Context, in *GetNeighbourR
 }
 
 // PeerServiceServer is the server API for PeerService service.
-// All implementations must embed UnimplementedPeerServiceServer
+// All implementations should embed UnimplementedPeerServiceServer
 // for forward compatibility
 type PeerServiceServer interface {
 	// GetPeers returns a list of peer's network address.
-	GetNeighbours(context.Context, *GetNeighbourRequest) (*GetNeighbourResponse, error)
-	mustEmbedUnimplementedPeerServiceServer()
+	PingPong(context.Context, *Ping) (*Pong, error)
 }
 
-// UnimplementedPeerServiceServer must be embedded to have forward compatible implementations.
+// UnimplementedPeerServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedPeerServiceServer struct {
 }
 
-func (UnimplementedPeerServiceServer) GetNeighbours(context.Context, *GetNeighbourRequest) (*GetNeighbourResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetNeighbours not implemented")
+func (UnimplementedPeerServiceServer) PingPong(context.Context, *Ping) (*Pong, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PingPong not implemented")
 }
-func (UnimplementedPeerServiceServer) mustEmbedUnimplementedPeerServiceServer() {}
 
 // UnsafePeerServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to PeerServiceServer will
@@ -72,20 +70,20 @@ func RegisterPeerServiceServer(s grpc.ServiceRegistrar, srv PeerServiceServer) {
 	s.RegisterService(&PeerService_ServiceDesc, srv)
 }
 
-func _PeerService_GetNeighbours_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetNeighbourRequest)
+func _PeerService_PingPong_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Ping)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PeerServiceServer).GetNeighbours(ctx, in)
+		return srv.(PeerServiceServer).PingPong(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/p2p.PeerService/GetNeighbours",
+		FullMethod: "/p2p.PeerService/PingPong",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PeerServiceServer).GetNeighbours(ctx, req.(*GetNeighbourRequest))
+		return srv.(PeerServiceServer).PingPong(ctx, req.(*Ping))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -98,132 +96,92 @@ var PeerService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*PeerServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "GetNeighbours",
-			Handler:    _PeerService_GetNeighbours_Handler,
+			MethodName: "PingPong",
+			Handler:    _PeerService_PingPong_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "p2p.proto",
 }
 
-// NodeServiceClient is the client API for NodeService service.
+// MessageServiceClient is the client API for MessageService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type NodeServiceClient interface {
-	// Broadcast a message to all peers.
-	Broadcast(ctx context.Context, in *BroadcastRequest, opts ...grpc.CallOption) (*BroadcastResponse, error)
-	ReceiveMessage(ctx context.Context, in *ReceiveMessageRequest, opts ...grpc.CallOption) (*ReceiveMessageResponse, error)
+type MessageServiceClient interface {
+	SendMessage(ctx context.Context, in *MessageRequest, opts ...grpc.CallOption) (*MessageResponse, error)
 }
 
-type nodeServiceClient struct {
+type messageServiceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewNodeServiceClient(cc grpc.ClientConnInterface) NodeServiceClient {
-	return &nodeServiceClient{cc}
+func NewMessageServiceClient(cc grpc.ClientConnInterface) MessageServiceClient {
+	return &messageServiceClient{cc}
 }
 
-func (c *nodeServiceClient) Broadcast(ctx context.Context, in *BroadcastRequest, opts ...grpc.CallOption) (*BroadcastResponse, error) {
-	out := new(BroadcastResponse)
-	err := c.cc.Invoke(ctx, "/p2p.NodeService/Broadcast", in, out, opts...)
+func (c *messageServiceClient) SendMessage(ctx context.Context, in *MessageRequest, opts ...grpc.CallOption) (*MessageResponse, error) {
+	out := new(MessageResponse)
+	err := c.cc.Invoke(ctx, "/p2p.MessageService/SendMessage", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *nodeServiceClient) ReceiveMessage(ctx context.Context, in *ReceiveMessageRequest, opts ...grpc.CallOption) (*ReceiveMessageResponse, error) {
-	out := new(ReceiveMessageResponse)
-	err := c.cc.Invoke(ctx, "/p2p.NodeService/ReceiveMessage", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// NodeServiceServer is the server API for NodeService service.
-// All implementations must embed UnimplementedNodeServiceServer
+// MessageServiceServer is the server API for MessageService service.
+// All implementations should embed UnimplementedMessageServiceServer
 // for forward compatibility
-type NodeServiceServer interface {
-	// Broadcast a message to all peers.
-	Broadcast(context.Context, *BroadcastRequest) (*BroadcastResponse, error)
-	ReceiveMessage(context.Context, *ReceiveMessageRequest) (*ReceiveMessageResponse, error)
-	mustEmbedUnimplementedNodeServiceServer()
+type MessageServiceServer interface {
+	SendMessage(context.Context, *MessageRequest) (*MessageResponse, error)
 }
 
-// UnimplementedNodeServiceServer must be embedded to have forward compatible implementations.
-type UnimplementedNodeServiceServer struct {
+// UnimplementedMessageServiceServer should be embedded to have forward compatible implementations.
+type UnimplementedMessageServiceServer struct {
 }
 
-func (UnimplementedNodeServiceServer) Broadcast(context.Context, *BroadcastRequest) (*BroadcastResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Broadcast not implemented")
+func (UnimplementedMessageServiceServer) SendMessage(context.Context, *MessageRequest) (*MessageResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SendMessage not implemented")
 }
-func (UnimplementedNodeServiceServer) ReceiveMessage(context.Context, *ReceiveMessageRequest) (*ReceiveMessageResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ReceiveMessage not implemented")
-}
-func (UnimplementedNodeServiceServer) mustEmbedUnimplementedNodeServiceServer() {}
 
-// UnsafeNodeServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to NodeServiceServer will
+// UnsafeMessageServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to MessageServiceServer will
 // result in compilation errors.
-type UnsafeNodeServiceServer interface {
-	mustEmbedUnimplementedNodeServiceServer()
+type UnsafeMessageServiceServer interface {
+	mustEmbedUnimplementedMessageServiceServer()
 }
 
-func RegisterNodeServiceServer(s grpc.ServiceRegistrar, srv NodeServiceServer) {
-	s.RegisterService(&NodeService_ServiceDesc, srv)
+func RegisterMessageServiceServer(s grpc.ServiceRegistrar, srv MessageServiceServer) {
+	s.RegisterService(&MessageService_ServiceDesc, srv)
 }
 
-func _NodeService_Broadcast_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(BroadcastRequest)
+func _MessageService_SendMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MessageRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NodeServiceServer).Broadcast(ctx, in)
+		return srv.(MessageServiceServer).SendMessage(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/p2p.NodeService/Broadcast",
+		FullMethod: "/p2p.MessageService/SendMessage",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NodeServiceServer).Broadcast(ctx, req.(*BroadcastRequest))
+		return srv.(MessageServiceServer).SendMessage(ctx, req.(*MessageRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NodeService_ReceiveMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ReceiveMessageRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(NodeServiceServer).ReceiveMessage(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/p2p.NodeService/ReceiveMessage",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NodeServiceServer).ReceiveMessage(ctx, req.(*ReceiveMessageRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-// NodeService_ServiceDesc is the grpc.ServiceDesc for NodeService service.
+// MessageService_ServiceDesc is the grpc.ServiceDesc for MessageService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var NodeService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "p2p.NodeService",
-	HandlerType: (*NodeServiceServer)(nil),
+var MessageService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "p2p.MessageService",
+	HandlerType: (*MessageServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Broadcast",
-			Handler:    _NodeService_Broadcast_Handler,
-		},
-		{
-			MethodName: "ReceiveMessage",
-			Handler:    _NodeService_ReceiveMessage_Handler,
+			MethodName: "SendMessage",
+			Handler:    _MessageService_SendMessage_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
