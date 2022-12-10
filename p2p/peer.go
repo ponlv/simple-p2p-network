@@ -89,12 +89,16 @@ func (pm *peerManager) addPeer(addr string) {
 		return
 	}
 
+	fmt.Printf("node %v - add peer: %v \n", pm.addr, addr)
 	pm.Peers[addr] = &peer{Address: addr}
 }
 
 // AddPeers add list of addresses to the peer manager.
 func (pm *peerManager) AddPeers(addrs ...string) {
 	for _, addr := range addrs {
+		if addr == pm.addr {
+			continue
+		}
 		pm.addPeer(addr)
 	}
 }
@@ -234,6 +238,7 @@ func (pm *peerManager) GetPeersNum() int {
 
 // StartDiscoverPeers starts discovering new peers via bootstraps.
 func (pm *peerManager) StartDiscoverPeers(bootstraps ...string) {
+
 	pm.AddPeers(bootstraps...)
 
 	pm.waiter.Add(1)
@@ -261,7 +266,7 @@ func (pm *peerManager) StartDiscoverPeers(bootstraps ...string) {
 }
 
 func (pm *peerManager) PingPong(ctx context.Context, ping *proto.Ping) (*proto.Pong, error) {
-
 	peers := pm.GetPeers()
+	pm.AddPeers(ping.Address)
 	return &proto.Pong{Addresses: peers}, nil
 }
