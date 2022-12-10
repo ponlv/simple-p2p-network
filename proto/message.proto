@@ -5,10 +5,8 @@ package p2p;
 option go_package = "./proto";
 
 enum MessageType {
-      FIND_NODE = 0;
-      NODES = 1;
-      FIND_VALUE = 2;
-      VALUE = 3;
+      QUERY = 0;
+      DECISION = 1;
 }
 
 message Pong {

@@ -4,7 +4,9 @@ import (
 	"google.golang.org/grpc"
 	"log"
 	"net"
+	"simple-p2p/consensus"
 	"simple-p2p/p2p"
+	"simple-p2p/p2p/message"
 	"simple-p2p/proto/proto"
 	"sync"
 	"time"
@@ -20,15 +22,27 @@ type Node struct {
 	Waiter *sync.WaitGroup // WaitGroup for graceful shutdown
 
 	PeerManager p2p.Peer // Peer manager instance
+
+	MessageManager message.MessageManager // Message manager instance
+
+	Consensus *consensus.Consensus // Consensus instance
 }
 
 // NewNode creates a new node instance.
 func NewNode(address string) *Node {
 	return &Node{
-		Address:     address,
-		Server:      grpc.NewServer(),
-		Waiter:      &sync.WaitGroup{},
-		PeerManager: p2p.NewPeerManager(address),
+		Address:        address,
+		Server:         grpc.NewServer(),
+		Waiter:         &sync.WaitGroup{},
+		PeerManager:    p2p.NewPeerManager(address),
+		MessageManager: message.NewMessageManager(),
+		Consensus: consensus.NewConsensus(
+			consensus.SnowParams{
+				K: 0,
+				A: 0,
+				B: 0,
+			},
+		),
 	}
 }
 
@@ -47,6 +61,7 @@ func (n *Node) StartServer() {
 
 	// register internal service
 	proto.RegisterPeerServiceServer(n.Server, n.PeerManager)
+	proto.RegisterMessageServiceServer(n.Server, n.MessageManager)
 
 	log.Printf("server is listening at: %v", n.Address)
 	n.Waiter.Add(1)

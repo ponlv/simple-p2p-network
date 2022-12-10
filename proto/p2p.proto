@@ -13,5 +13,5 @@ service PeerService {
 }
 
 service MessageService {
-  rpc SendMessage (MessageRequest) returns (MessageResponse) {}
+  rpc ReceiveMessage (MessageRequest) returns (MessageResponse) {}
 }

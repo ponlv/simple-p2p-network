@@ -108,7 +108,7 @@ var PeerService_ServiceDesc = grpc.ServiceDesc{
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type MessageServiceClient interface {
-	SendMessage(ctx context.Context, in *MessageRequest, opts ...grpc.CallOption) (*MessageResponse, error)
+	ReceiveMessage(ctx context.Context, in *MessageRequest, opts ...grpc.CallOption) (*MessageResponse, error)
 }
 
 type messageServiceClient struct {
@@ -119,9 +119,9 @@ func NewMessageServiceClient(cc grpc.ClientConnInterface) MessageServiceClient {
 	return &messageServiceClient{cc}
 }
 
-func (c *messageServiceClient) SendMessage(ctx context.Context, in *MessageRequest, opts ...grpc.CallOption) (*MessageResponse, error) {
+func (c *messageServiceClient) ReceiveMessage(ctx context.Context, in *MessageRequest, opts ...grpc.CallOption) (*MessageResponse, error) {
 	out := new(MessageResponse)
-	err := c.cc.Invoke(ctx, "/p2p.MessageService/SendMessage", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/p2p.MessageService/ReceiveMessage", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -132,15 +132,15 @@ func (c *messageServiceClient) SendMessage(ctx context.Context, in *MessageReque
 // All implementations should embed UnimplementedMessageServiceServer
 // for forward compatibility
 type MessageServiceServer interface {
-	SendMessage(context.Context, *MessageRequest) (*MessageResponse, error)
+	ReceiveMessage(context.Context, *MessageRequest) (*MessageResponse, error)
 }
 
 // UnimplementedMessageServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedMessageServiceServer struct {
 }
 
-func (UnimplementedMessageServiceServer) SendMessage(context.Context, *MessageRequest) (*MessageResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SendMessage not implemented")
+func (UnimplementedMessageServiceServer) ReceiveMessage(context.Context, *MessageRequest) (*MessageResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReceiveMessage not implemented")
 }
 
 // UnsafeMessageServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -154,20 +154,20 @@ func RegisterMessageServiceServer(s grpc.ServiceRegistrar, srv MessageServiceSer
 	s.RegisterService(&MessageService_ServiceDesc, srv)
 }
 
-func _MessageService_SendMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _MessageService_ReceiveMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(MessageRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MessageServiceServer).SendMessage(ctx, in)
+		return srv.(MessageServiceServer).ReceiveMessage(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/p2p.MessageService/SendMessage",
+		FullMethod: "/p2p.MessageService/ReceiveMessage",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MessageServiceServer).SendMessage(ctx, req.(*MessageRequest))
+		return srv.(MessageServiceServer).ReceiveMessage(ctx, req.(*MessageRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -180,8 +180,8 @@ var MessageService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*MessageServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "SendMessage",
-			Handler:    _MessageService_SendMessage_Handler,
+			MethodName: "ReceiveMessage",
+			Handler:    _MessageService_ReceiveMessage_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

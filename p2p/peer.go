@@ -179,8 +179,6 @@ func (pm *peerManager) GetPeerState(addr string) connectivity.State {
 
 // GetConnection returns a connection to a peer.
 func (pm *peerManager) GetConnection(addr string) (*grpc.ClientConn, error) {
-	pm.Mux.Lock()
-	defer pm.Mux.Unlock()
 
 	p, ok := pm.Peers[addr]
 	if !ok {
