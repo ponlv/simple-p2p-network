@@ -5,6 +5,7 @@ import (
 	"simple-p2p/node"
 	"simple-p2p/proto/proto"
 	"simple-p2p/utils"
+	"sync"
 )
 
 type Consensus interface {
@@ -19,10 +20,11 @@ type consensus struct {
 	SnowParams
 	Node node.Node
 
-	preference int  // preference of the node
-	confident  int  // confidence of the node
-	accepted   bool // accepted value of the node
-	isRunning  bool // consensus is running
+	preference int          // preference of the node
+	confident  int          // confidence of the node
+	accepted   bool         // accepted value of the node
+	isRunning  bool         // consensus is running
+	mux        sync.RWMutex // mutual exclusion lock for peers
 }
 
 type SnowParams struct {
@@ -44,23 +46,18 @@ func (c *consensus) Preference() int {
 	return c.preference
 }
 
-// Start starts the consensus process.
+// Sync starts the consensus process.
 func (c *consensus) Sync() {
-
-	if c.isRunning {
-		return
-	}
+	c.mux.Lock()
+	defer c.mux.Unlock()
 
 	c.confident = 1
 	c.accepted = false
-	c.isRunning = true
-
+	
 	for c.accepted == false {
-
 		c.step()
 	}
 
-	c.isRunning = false
 }
 
 func (c *consensus) step() {
