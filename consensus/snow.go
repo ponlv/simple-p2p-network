@@ -2,6 +2,7 @@ package consensus
 
 import (
 	"context"
+	"fmt"
 	"simple-p2p/node"
 	"simple-p2p/proto/proto"
 	"simple-p2p/utils"
@@ -9,9 +10,24 @@ import (
 )
 
 type Consensus interface {
+
+	// Preference returns the preference of the node.
 	Preference() int
+
+	// Sync starts the consensus process.
 	Sync()
+
+	// GetPreference is internal call to perform a single step of the consensus
 	GetPreference(context.Context, *proto.Empty) (*proto.GetPreferenceResponse, error)
+
+	// AddNode adds a node to the consensus.
+	AddNode(*node.Node)
+
+	// GetNode returns the node of the consensus.
+	GetNode() *node.Node
+
+	// UpdatePreference updates the preference of the node.
+	UpdatePreference(int)
 }
 
 var _ Consensus = (*consensus)(nil)
@@ -54,23 +70,29 @@ func (c *consensus) Sync() {
 	c.confident = 1
 	c.accepted = false
 
-	for i := 0; c.accepted == false; i++ {
+	i := 0
+	for ; c.accepted == false; i++ {
+		fmt.Printf("Node %v: Round %d: preference = %d, confident = %d, accepted = %t \n", c.Node.Address, i, c.preference, c.confident, c.accepted)
+
 		c.step()
 
 		if i > c.MaxStep {
+			fmt.Printf("Node %v: Consensus failed \n", c.Node.Address)
 			break
 		}
 	}
 
+	fmt.Printf("Node %v: Consensus succeeded after %v rounds \n", c.Node.Address, i)
 }
 
+// step performs a single step of the consensus.
 func (c *consensus) step() {
 	// get K peers from the peer manager
 	kPeers := c.Node.PeerManager.GetSamplePeers(c.K)
 
 	// send query to each peer
 	responses := make([]int, c.K)
-	for _, peer := range kPeers {
+	for i, peer := range kPeers {
 		// get connection of the peer
 		conn, err := c.Node.PeerManager.GetConnection(peer)
 		if err != nil {
@@ -86,14 +108,14 @@ func (c *consensus) step() {
 			continue
 		}
 
-		responses = append(responses, int(response.Preference))
+		responses[i] = int(response.Preference)
 	}
 
 	// get most frequent value from responses
-	count, value := utils.GetMostFrequentValue(responses)
+	value, count := utils.GetMostFrequentValue(responses)
 
 	// check if frequency is greater than A
-	if count > c.A {
+	if count >= c.A {
 		oldPreference := c.preference
 
 		c.preference = value
@@ -106,7 +128,7 @@ func (c *consensus) step() {
 			c.confident++
 
 			// check if confidence is greater than B, the value is accepted
-			if c.confident > c.B {
+			if c.confident >= c.B {
 				c.accepted = true
 			}
 		}
@@ -116,8 +138,27 @@ func (c *consensus) step() {
 
 }
 
+// GetPreference returns the preference of the node.
 func (c *consensus) GetPreference(context.Context, *proto.Empty) (*proto.GetPreferenceResponse, error) {
 	return &proto.GetPreferenceResponse{
 		Preference: int64(c.preference),
 	}, nil
+}
+
+// AddNode adds a node to the consensus.
+func (c *consensus) AddNode(n *node.Node) {
+	c.Node = n
+}
+
+// GetNode returns the node of the consensus.
+func (c *consensus) GetNode() *node.Node {
+	return c.Node
+}
+
+// UpdatePreference updates the preference of the node.
+func (c *consensus) UpdatePreference(p int) {
+	c.mux.Lock()
+	defer c.mux.Unlock()
+
+	c.preference = p
 }
