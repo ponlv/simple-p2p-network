@@ -7,7 +7,15 @@ import (
 	"simple-p2p/utils"
 )
 
-type Consensus struct {
+type Consensus interface {
+	Preference() int
+	Sync()
+	GetPreference(context.Context, *proto.Empty) (*proto.GetPreferenceResponse, error)
+}
+
+var _ Consensus = (*consensus)(nil)
+
+type consensus struct {
 	SnowParams
 	Node node.Node
 
@@ -25,19 +33,19 @@ type SnowParams struct {
 }
 
 // NewConsensus creates a new consensus instance.
-func NewConsensus(params SnowParams) *Consensus {
-	return &Consensus{
+func NewConsensus(params SnowParams) Consensus {
+	return &consensus{
 		SnowParams: params,
 	}
 }
 
 // Preference returns the preference of the node.
-func (c *Consensus) Preference() int {
+func (c *consensus) Preference() int {
 	return c.preference
 }
 
 // Start starts the consensus process.
-func (c *Consensus) Sync() {
+func (c *consensus) Sync() {
 
 	if c.isRunning {
 		return
@@ -55,7 +63,7 @@ func (c *Consensus) Sync() {
 	c.isRunning = false
 }
 
-func (c *Consensus) step() {
+func (c *consensus) step() {
 	// get K peers from the peer manager
 	kPeers := c.Node.PeerManager.GetSamplePeers(c.K)
 
@@ -106,7 +114,7 @@ func (c *Consensus) step() {
 	}
 }
 
-func (c *Consensus) GetPreference(context.Context, *proto.Empty) (*proto.GetPreferenceResponse, error) {
+func (c *consensus) GetPreference(context.Context, *proto.Empty) (*proto.GetPreferenceResponse, error) {
 	return &proto.GetPreferenceResponse{
 		Preference: int64(c.preference),
 	}, nil
