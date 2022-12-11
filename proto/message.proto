@@ -28,3 +28,12 @@ message MessageResponse {
   MessageType Type = 1;
   bytes Value = 2;
 }
+
+
+message GetPreferenceResponse {
+  int64 Preference = 1;
+}
+
+message Empty {
+
+}

@@ -187,3 +187,87 @@ var MessageService_ServiceDesc = grpc.ServiceDesc{
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "p2p.proto",
 }
+
+// ConsensusServiceClient is the client API for ConsensusService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type ConsensusServiceClient interface {
+	GetPreference(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetPreferenceResponse, error)
+}
+
+type consensusServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewConsensusServiceClient(cc grpc.ClientConnInterface) ConsensusServiceClient {
+	return &consensusServiceClient{cc}
+}
+
+func (c *consensusServiceClient) GetPreference(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetPreferenceResponse, error) {
+	out := new(GetPreferenceResponse)
+	err := c.cc.Invoke(ctx, "/p2p.ConsensusService/GetPreference", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// ConsensusServiceServer is the server API for ConsensusService service.
+// All implementations should embed UnimplementedConsensusServiceServer
+// for forward compatibility
+type ConsensusServiceServer interface {
+	GetPreference(context.Context, *Empty) (*GetPreferenceResponse, error)
+}
+
+// UnimplementedConsensusServiceServer should be embedded to have forward compatible implementations.
+type UnimplementedConsensusServiceServer struct {
+}
+
+func (UnimplementedConsensusServiceServer) GetPreference(context.Context, *Empty) (*GetPreferenceResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPreference not implemented")
+}
+
+// UnsafeConsensusServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to ConsensusServiceServer will
+// result in compilation errors.
+type UnsafeConsensusServiceServer interface {
+	mustEmbedUnimplementedConsensusServiceServer()
+}
+
+func RegisterConsensusServiceServer(s grpc.ServiceRegistrar, srv ConsensusServiceServer) {
+	s.RegisterService(&ConsensusService_ServiceDesc, srv)
+}
+
+func _ConsensusService_GetPreference_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConsensusServiceServer).GetPreference(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/p2p.ConsensusService/GetPreference",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConsensusServiceServer).GetPreference(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// ConsensusService_ServiceDesc is the grpc.ServiceDesc for ConsensusService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var ConsensusService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "p2p.ConsensusService",
+	HandlerType: (*ConsensusServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetPreference",
+			Handler:    _ConsensusService_GetPreference_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "p2p.proto",
+}

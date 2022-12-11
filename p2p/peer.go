@@ -6,6 +6,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 	"log"
+	"math/rand"
 	"simple-p2p/proto/proto"
 	"sync"
 	"time"
@@ -41,6 +42,9 @@ type Peer interface {
 
 	// PingPong sends a ping message to a peer and waits for a pong message.
 	PingPong(context.Context, *proto.Ping) (*proto.Pong, error)
+
+	// GetSamplePeers returns a list of peers from the peer manager by a given number.
+	GetSamplePeers(num int) []string
 }
 
 // peer is the remote node that a local node can connect to.
@@ -267,4 +271,29 @@ func (pm *peerManager) PingPong(ctx context.Context, ping *proto.Ping) (*proto.P
 	peers := pm.GetPeers()
 	pm.AddPeers(ping.Address)
 	return &proto.Pong{Addresses: peers}, nil
+}
+
+func (pm *peerManager) StopDiscoverPeers() {
+	pm.stopDiscover <- struct{}{}
+	<-pm.discoverStopped
+}
+
+func (pm *peerManager) GetSamplePeers(num int) []string {
+	pm.Mux.RLock()
+	defer pm.Mux.RUnlock()
+
+	// get all peer addresses
+	peers := pm.GetPeers()
+
+	// if the number of peers is less than the number of peers to be sampled, return all peers
+	if len(peers) <= num {
+		return peers
+	}
+
+	// randomly sample peers
+	rand.Shuffle(len(peers), func(i, j int) {
+		peers[i], peers[j] = peers[j], peers[i]
+	})
+
+	return peers[:num]
 }

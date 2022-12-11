@@ -15,3 +15,7 @@ service PeerService {
 service MessageService {
   rpc ReceiveMessage (MessageRequest) returns (MessageResponse) {}
 }
+
+service ConsensusService {
+  rpc GetPreference (Empty) returns (GetPreferenceResponse) {}
+}

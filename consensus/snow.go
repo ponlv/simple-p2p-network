@@ -1,6 +1,11 @@
 package consensus
 
-import "simple-p2p/node"
+import (
+	"context"
+	"simple-p2p/node"
+	"simple-p2p/proto/proto"
+	"simple-p2p/utils"
+)
 
 type Consensus struct {
 	SnowParams
@@ -9,6 +14,7 @@ type Consensus struct {
 	preference int  // preference of the node
 	confident  int  // confidence of the node
 	accepted   bool // accepted value of the node
+	isRunning  bool // consensus is running
 }
 
 type SnowParams struct {
@@ -31,40 +37,77 @@ func (c *Consensus) Preference() int {
 }
 
 // Start starts the consensus process.
-func (c *Consensus) Start() {
+func (c *Consensus) Sync() {
+
+	if c.isRunning {
+		return
+	}
 
 	c.confident = 1
 	c.accepted = false
+	c.isRunning = true
 
-	for ; c.accepted == false; {
-		
+	for c.accepted == false {
+
+		c.step()
 	}
-	// TODO: get k peers from the peer manager
-	kPeers := c.Node.GetSamplePeers(c.K)
 
-	// TODO: send query to each peer
+	c.isRunning = false
+}
+
+func (c *Consensus) step() {
+	// get K peers from the peer manager
+	kPeers := c.Node.PeerManager.GetSamplePeers(c.K)
+
+	// send query to each peer
 	responses := make([]int, c.K)
 	for _, peer := range kPeers {
-		responses = append(responses, c.Node.GetPreference(peer))
+		// get connection of the peer
+		conn, err := c.Node.PeerManager.GetConnection(peer)
+		if err != nil {
+			continue
+		}
+
+		// create a proto client
+		client := proto.NewConsensusServiceClient(conn)
+
+		// send query
+		response, err := client.GetPreference(context.Background(), &proto.Empty{})
+		if err != nil {
+			continue
+		}
+
+		responses = append(responses, int(response.Preference))
 	}
 
-	// TODO: get most frequent value from responses
-	count, value := c.GetMostFrequentValue(responses)
+	// get most frequent value from responses
+	count, value := utils.GetMostFrequentValue(responses)
 
-	// TODO: check if frequency is greater than A
+	// check if frequency is greater than A
 	if count > c.A {
 		oldPreference := c.preference
 
 		c.preference = value
 
+		// check if preference is changed, the confidence is reset to 1
+		// otherwise, the confidence is increased by 1
 		if oldPreference != c.preference {
 			c.confident = 1
 		} else {
 			c.confident++
 
+			// check if confidence is greater than B, the value is accepted
 			if c.confident > c.B {
 				c.accepted = true
 			}
 		}
+	} else {
+		c.confident = 0
 	}
+}
+
+func (c *Consensus) GetPreference(context.Context, *proto.Empty) (*proto.GetPreferenceResponse, error) {
+	return &proto.GetPreferenceResponse{
+		Preference: int64(c.preference),
+	}, nil
 }

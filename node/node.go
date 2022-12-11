@@ -4,6 +4,7 @@ import (
 	"google.golang.org/grpc"
 	"log"
 	"net"
+	"simple-p2p/consensus"
 	"simple-p2p/p2p"
 	"simple-p2p/p2p/message"
 	"simple-p2p/proto/proto"
@@ -23,6 +24,8 @@ type Node struct {
 	PeerManager p2p.Peer // Peer manager instance
 
 	MessageManager message.MessageManager // Message manager instance
+
+	Consensus *consensus.Consensus // Consensus instance
 
 }
 
