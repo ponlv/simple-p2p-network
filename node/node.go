@@ -4,7 +4,6 @@ import (
 	"google.golang.org/grpc"
 	"log"
 	"net"
-	"simple-p2p/consensus"
 	"simple-p2p/p2p"
 	"simple-p2p/p2p/message"
 	"simple-p2p/proto/proto"
@@ -25,7 +24,6 @@ type Node struct {
 
 	MessageManager message.MessageManager // Message manager instance
 
-	Consensus *consensus.Consensus // Consensus instance
 }
 
 // NewNode creates a new node instance.
@@ -36,13 +34,6 @@ func NewNode(address string) *Node {
 		Waiter:         &sync.WaitGroup{},
 		PeerManager:    p2p.NewPeerManager(address),
 		MessageManager: message.NewMessageManager(),
-		Consensus: consensus.NewConsensus(
-			consensus.SnowParams{
-				K: 0,
-				A: 0,
-				B: 0,
-			},
-		),
 	}
 }
 
