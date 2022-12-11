@@ -18,7 +18,7 @@ var _ Consensus = (*consensus)(nil)
 
 type consensus struct {
 	SnowParams
-	Node node.Node
+	Node *node.Node
 
 	preference int          // preference of the node
 	confident  int          // confidence of the node
@@ -53,9 +53,13 @@ func (c *consensus) Sync() {
 
 	c.confident = 1
 	c.accepted = false
-	
-	for c.accepted == false {
+
+	for i := 0; c.accepted == false; i++ {
 		c.step()
+
+		if i > c.MaxStep {
+			break
+		}
 	}
 
 }
@@ -109,6 +113,7 @@ func (c *consensus) step() {
 	} else {
 		c.confident = 0
 	}
+
 }
 
 func (c *consensus) GetPreference(context.Context, *proto.Empty) (*proto.GetPreferenceResponse, error) {
