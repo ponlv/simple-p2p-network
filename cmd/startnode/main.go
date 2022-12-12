@@ -11,9 +11,9 @@ import (
 func main() {
 
 	// add flag
-	bootstrap := flag.String("bootstrap", "127.0.0.1:9774", "bootstrap address to join the p2p network")
+	neighbors := flag.String("neighbors", "", "bootstrap address to join the p2p network")
 	host := flag.String("host", "127.0.0.1", "host address")
-	port := flag.Int64("port", 9774, "port to listen")
+	port := flag.Int64("port", 9447, "port to listen")
 	K := flag.Int("K", 3, "sample K of each round of query. K < number_of_peers")
 	Alpha := flag.Int("A", 2, "is quorum size. A < K")
 	Beta := flag.Int("B", 10, "is decision threshold")
@@ -21,10 +21,12 @@ func main() {
 	flag.Parse()
 
 	// start node
-	newNode := node.NewNode(fmt.Sprintf("%v:%d", host, port))
+	newNode := node.NewNode(fmt.Sprintf("%v:%d", *host, *port))
 
 	// start peer discovery
-	newNode.PeerManager.StartDiscoverPeers(*bootstrap)
+	if *neighbors != "" {
+		newNode.PeerManager.StartDiscoverPeers(*neighbors)
+	}
 
 	// start consensus
 	snow := consensus.NewConsensus(consensus.SnowParams{
@@ -40,4 +42,6 @@ func main() {
 	newNode.StartServer()
 
 	newNode.Waiter.Wait()
+
+	fmt.Printf("Node %v is started \n", newNode.Address)
 }

@@ -47,3 +47,16 @@ We use gRPC to communicate between peers. Each peer has a gRPC server that liste
                        +-----connection-->+peer|
                                           +----+
 ```
+
+## Build and run
+To build and run the project, you need to have go installed on your machine. You can download go from [here](https://golang.org/dl/).
+
+To build the project, run the following command in the root directory of the project
+```bash
+go build -o build/startnode cmd/startnode/main.go
+```
+
+To run the project, run the following command in the root directory of the project
+```bash
+./build/startnode -port 5000 -neighbors localhost:5001,localhost:5002
+```
